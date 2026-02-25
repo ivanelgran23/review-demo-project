@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Карточка товара</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #0f172a, #111827 50%, #0b1223);
+      --panel: #0f1629;
+      --card: #111a2f;
+      --accent: #60a5fa;
+      --accent-2: #8b5cf6;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px 64px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 960px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 18px;
+    }
+    a.back { color: var(--accent); text-decoration: none; font-weight: 600; }
+    h1 { margin: 0; letter-spacing: -0.01em; }
+    .muted { color: var(--muted); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .price { color: var(--accent); font-weight: 700; margin-top: 6px; }
+    .reviews { display: grid; gap: 10px; }
+    .review {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1223;
+    }
+    form {
+      display: grid;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    label { font-size: 14px; color: var(--muted); }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1223;
+      color: var(--text);
+      font-size: 15px;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(96,165,250,0.25);
+    }
+    button {
+      justify-self: start;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1223;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(96,165,250,0.35);
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(96,165,250,0.45); }
+    @media (max-width: 640px) {
+      .shell { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <a class="back" href="index.html">← К списку товаров</a>
+    <div class="card">
+      <h1 id="name"></h1>
+      <div class="muted" id="description"></div>
+      <div class="price" id="price"></div>
+    </div>
+
+    <div class="card">
+      <h2>Отзывы</h2>
+      <div id="reviews" class="reviews"></div>
+    </div>
+
+    <div class="card">
+      <h3>Оставить отзыв</h3>
+      <p class="muted">Новый отзыв появится после модерации.</p>
+      <form id="review-form">
+        <div>
+          <label>Автор (необязательно)</label>
+          <input name="author" placeholder="Ваше имя">
+        </div>
+        <div>
+          <label>Текст</label>
+          <textarea name="text" rows="3" required placeholder="Поделитесь впечатлением"></textarea>
+        </div>
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const apiHost = window.location.hostname || 'localhost';
+    const apiProto = window.location.protocol || 'http:';
+    const API_BASE = `${apiProto}//${apiHost}:8000`;
+    const productId = new URLSearchParams(window.location.search).get('id');
+    if (!productId) {
+      alert('ID товара отсутствует');
+    }
+
+    async function loadProduct() {
+      const res = await fetch(`${API_BASE}/products/${productId}`);
+      if (!res.ok) {
+        alert('Товар не найден');
+        return;
+      }
+      const p = await res.json();
+      document.getElementById('name').textContent = p.name;
+      document.getElementById('description').textContent = p.description || 'Описание не указано';
+      document.getElementById('price').textContent = `${p.price} ₽`;
+      const container = document.getElementById('reviews');
+      container.innerHTML = '';
+      if (!p.reviews.length) {
+        container.innerHTML = '<span class="muted">Опубликованных отзывов пока нет.</span>';
+      } else {
+        p.reviews.forEach(r => {
+          const div = document.createElement('div');
+          div.className = 'review';
+          div.innerHTML = `<strong>${r.author || 'Аноним'}</strong><br>${r.text}`;
+          container.appendChild(div);
+        });
+      }
+    }
+
+    document.getElementById('review-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const payload = Object.fromEntries(formData.entries());
+      payload.product_id = productId;
+      const res = await fetch(`${API_BASE}/reviews/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        alert('Не удалось отправить отзыв');
+        return;
+      }
+      e.target.reset();
+      loadProduct();
+    });
+
+    loadProduct();
+  </script>
+</body>
+</html>

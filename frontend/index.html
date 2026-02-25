@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Каталог — создание товаров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #0f172a, #111827 50%, #0b1223);
+      --panel: #0f1629;
+      --card: #111a2f;
+      --accent: #60a5fa;
+      --accent-2: #8b5cf6;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 48px 16px 64px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 1080px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+    h1, h2 { margin: 0 0 16px; font-weight: 700; letter-spacing: -0.01em; }
+    p.lead { margin: 0 0 24px; color: var(--muted); }
+    form {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    label { font-size: 14px; color: var(--muted); }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1223;
+      color: var(--text);
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(96,165,250,0.25);
+    }
+    button {
+      justify-self: start;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1223;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(96,165,250,0.35);
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(96,165,250,0.45); }
+    button:active { transform: translateY(0); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .product {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 8px;
+    }
+    .product h3 { margin: 0; font-size: 18px; }
+    .price { color: var(--accent); font-weight: 700; }
+    .muted { color: var(--muted); font-size: 14px; }
+    a.cta {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    a.cta:hover { color: #93c5fd; }
+    @media (max-width: 640px) {
+      .shell { padding: 20px; }
+      form { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>Новый товар</h1>
+    <p class="lead">Создайте карточку товара и сразу увидите её в списке ниже.</p>
+    <form id="product-form">
+      <div>
+        <label>Название</label>
+        <input name="name" required placeholder="Например, Умная колонка X2">
+      </div>
+      <div>
+        <label>Описание</label>
+        <textarea name="description" rows="3" placeholder="Коротко о преимуществах товара"></textarea>
+      </div>
+      <div>
+        <label>Цена (₽)</label>
+        <input name="price" type="number" step="0.01" min="0" required placeholder="1999.00">
+      </div>
+      <button type="submit">Добавить</button>
+    </form>
+
+    <h2>Товары</h2>
+    <div id="products" class="grid"></div>
+  </div>
+
+  <script>
+    const apiHost = window.location.hostname || 'localhost';
+    const apiProto = window.location.protocol || 'http:';
+    const API_BASE = `${apiProto}//${apiHost}:8000`;
+
+    async function loadProducts() {
+      const res = await fetch(`${API_BASE}/products`);
+      if (!res.ok) {
+        document.getElementById('products').innerHTML = '<span class="muted">Не удалось загрузить список.</span>';
+        return;
+      }
+      const data = await res.json();
+      const container = document.getElementById('products');
+      container.innerHTML = '';
+      if (!data.length) {
+        container.innerHTML = '<span class="muted">Пока нет товаров.</span>';
+        return;
+      }
+      data.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product';
+        div.innerHTML = `
+          <h3>${p.name}</h3>
+          <div class="price">${p.price} ₽</div>
+          <div class="muted">${p.description || 'Описание не указано'}</div>
+          <a class="cta" href="product.html?id=${p.id}">Открыть карточку →</a>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const payload = Object.fromEntries(formData.entries());
+      payload.price = Number(payload.price);
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        alert('Не удалось создать товар');
+        return;
+      }
+      e.target.reset();
+      loadProducts();
+    });
+
+    loadProducts();
+  </script>
+</body>
+</html>
