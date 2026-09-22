@@ -1,4 +1,4 @@
-# Product Reviews Demo
+# Product Reviews Demo Project
 
 Микросервисное демо: FastAPI API + worker на очереди RabbitMQ + статичный фронт. Отзывы уходят на ML‑модерацию (русские модели токсичности и спама), только прошедшие модерацию отображаются.
 
